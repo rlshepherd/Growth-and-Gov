@@ -1,9 +1,10 @@
 # Loading our TS Data
 library(quantmod)
 library(plyr)
+library(reshape)
 
 # GNI per capita (from World Bank)
-GNI.pc <- read.table("/Users/russellshepherd/Documents/MIIS/2011 Fall/DS/data/gni_per_capita.txt",header=T,sep="\t",quote="",na.strings="NA", colClasses=c("factor","factor",rep("numeric",52)))
+GNI.pc <- read.table("/data/gni_per_capita.txt",header=T,sep="\t",quote="",na.strings="NA", colClasses=c("factor","factor",rep("numeric",52)))
 
 # What does the data look like?
 head(GNI.pc)
@@ -18,14 +19,16 @@ GNI.pc <- melt(GNI.pc, id=1:2)
 GNI.pc$Country.Name <- as.factor(gsub("\"", "", GNI.pc$Country.Name))
 names(GNI.pc) <- c("Country.Name","Country.Code","Year","GNI.pc")
 
-# Order by Country.Name, then Year (Time Series format)
-GNI.pc<- sort(GNI.pc, by=~ Country.Name +Year)
+# Order by Country.Name, then Year (Time Series format).
+GNI.pc <- sort(GNI.pc, by=~ Country.Name+ Year) # THIS BROKE ON UPDATE 2.13 > 2.15 -- needs fixing.
 
 # Load GDP per capita, and Openness (from PWT 7.0)
-penn <- read.csv("/Users/russellshepherd/Documents/MIIS/2011 Fall/DS/data/penn_data.csv",header=T,quote="\"",na.strings="na")
+penn <- read.csv("/data/penn_data.csv",header=T,quote="\"",na.strings="na")
 
 # Penn has 190 countries, and more dense data. 
 
-# Perhaps we can use Plyr to split up the RGDP numbers to get growth and change in growth?
+# Perhaps we can use quantmod to split up the RGDP numbers to get growth and change in growth?
+penn.1 <- penn
+apply(penn.1,5,function(x){c(NA,diff(x))})
 
-
+# Try plyr next.
