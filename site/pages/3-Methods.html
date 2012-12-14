@@ -1,0 +1,183 @@
+
+
+
+{% extends "base.html" %}{% block content %}
+
+<h3>Methods</h3>
+
+<p>This study attempts to measure the causal effect of institutional inclusiveness on national economic outcomes by estimating a regression model of the following form:</p>
+\begin{align}
+y = \beta_{1}x_{1} + \beta_{2}x_{2} ... + \beta_{k}x_{k} + u \tag{3.1}
+\end{align}
+<p>Where \(y\) is GDP per capita, \(x_{1}\) is a measure of institutional inclusiveness, and \(x_{2},...,x_{k}\) is a vector of control variables based on relevant studies and theoretical literature (see section 4 Data for a complete list of observed variables). \(\beta_{1},...,\beta_{k}\) is a vector of parameters we wish to estimate, and \(u\) is the error term. </p>
+
+<p>The nature of growth empirics precludes the use of experimental data and instead focuses on regression analysis of observational data. Econometricians commonly employ the ordinary least-squares technique (OLS) to estimate models such as equation 3.1.
+For OLS to correctly estimate the \(\beta\)-parameters, the error term \(u\) must have a zero mean and be uncorrelated with the regressors (Equation 3.2).
+The first assumption is trivial because any departure from a zero mean will be absorbed by the intercepts, while the second assumption requires all dependent variables be exogenous: </p>
+</p>
+
+\begin{gather}
+E(u) = 0,\cr
+\cr
+Cor(x_{j},u) = 0,\ \ j = 0,1,...,K. \tag{3.2}
+\end{gather}
+
+<p>While this approach allows econometricians to ask big questions about the "deep determinants" of growth, it also introduces a series of practical difficulties in the analysis. The major concern when performing regression analysis in this non-experimental context is endogeneity, introduced either through omitted variables, measurement errors or simultaneity (Wooldrige 2002).
+Omitted variable bias occurs when the modeler has left some independent variable out of the equation, often either because there is no data available or the influence of the ommitted variable is unkown. Leaving variables out can result in spurious regerssion and meaningless results. 
+</p>
+<p>
+As an example, consider using OLS to estimate a model similar to Equation 3.1 for a simple dataset. Here I have constructed some hypothetical data with repeated measures of an Outcome variable for 4 countries across a ten year period. After five years, countries A & B implemented a Policy treatment designed to increase X, while C & D did not. </p>
+
+<div class="chunk"><div class="rcode"><div class="codetoggle"><a href="">[+/- Code]</a></div><div class="source"><pre class="knitr R"><span class="comment"># Generate some noisily increasing data.</span>
+<span class="functioncall">set.seed</span>(995)
+panel &lt;- <span class="functioncall">data.frame</span>(Country = <span class="functioncall">rep</span>( <span class="functioncall">c</span>(<span class="string">"A"</span>, <span class="string">"B"</span>, <span class="string">"C"</span>, <span class="string">"D"</span>), each = 10),
+                    Time = <span class="functioncall">rep</span>( 1:10, 4),
+                    Outcome = <span class="functioncall">c</span>( <span class="functioncall">c</span>(8,8,9,9,10,14:18) + <span class="functioncall">rnorm</span>(10,sd=1),
+                           <span class="functioncall">c</span>(9,9,10,10,11,15:19) + <span class="functioncall">rnorm</span>(10,sd=1),
+                           <span class="functioncall">rep</span>( <span class="functioncall">c</span>(3,4), each = 5) + <span class="functioncall">rnorm</span>(10, sd=1),
+                           <span class="functioncall">rep</span>( <span class="functioncall">c</span>(4,5), each = 5) + <span class="functioncall">rnorm</span>(10, sd=1)),
+                    Policy = <span class="functioncall">c</span>( <span class="functioncall">rep</span>( <span class="functioncall">c</span>( 0, 1, 0, 1), each = 5),
+                                   <span class="functioncall">rep</span>( 0, 20)))
+<span class="comment"># Display 2x2 panels by ID.</span>
+<span class="functioncall">library</span>(<span class="string">"gridExtra"</span>)
+<span class="functioncall">grid.arrange</span>(<span class="functioncall">tableGrob</span>(<span class="functioncall">subset</span>(panel, Country == <span class="string">"A"</span>), gp=<span class="functioncall">gpar</span>(fontsize=11, lwd=2)),
+             <span class="functioncall">tableGrob</span>(<span class="functioncall">subset</span>(panel, Country == <span class="string">"B"</span>), gp=<span class="functioncall">gpar</span>(fontsize=11, lwd=2)),
+             <span class="functioncall">tableGrob</span>(<span class="functioncall">subset</span>(panel, Country == <span class="string">"C"</span>), gp=<span class="functioncall">gpar</span>(fontsize=11, lwd=2)),
+             <span class="functioncall">tableGrob</span>(<span class="functioncall">subset</span>(panel, Country == <span class="string">"D"</span>), gp=<span class="functioncall">gpar</span>(fontsize=11, lwd=2)), 
+             main = <span class="functioncall">textGrob</span>(<span class="string">"Fig. 3.1: Example Data Panel"</span>, gp=<span class="functioncall">gpar</span>(fontsize=14)),
+             ncol = 2)
+</pre></div></div><div class="rimage default"><img src="figure/set-data.png"  class="plot" /></div></div>
+
+
+
+<p></p>Here the Outcome variable is designed to illustrate a special case of ommitted variable bias called the selection effect. Countries A & B have some unobserved tendency toward higher values of the variable Output, which may or may not be amplified by the treatment variable Policy. For the purpose of comparison, we exploit the natural experiment in the data (with before and after observations for a control and treatment group) to estimate Policy's causal effect on Outcome as <code class="knitr inline">5.5527</code> using a simple difference-in-differences calculation. Natural experiments are not typical of macro-economic data, and causal effects are estimated using regression analysis. For example, we can use OLS to estimate the following cross-sectional at time t = 6:
+$$ y_{i6} = \beta_{0} + \beta_{1}x_{i6} + u_{i6} \tag{3.3} $$
+Where \(i = [1,...,4]\) is a vector denoting countries, \(y\) is the outcome variable, and \(x_{6}\) is the value of Policy at t = 6 for for the \(i^{th}\) country.
+<div class="chunk"><div class="rcode"><div class="codetoggle"><a href="">[+/- Code]</a></div><div class="source"><pre class="knitr R"><span class="comment"># Calculate a difference-<span class="keyword">in</span>-differences estimator:</span>
+panel$group &lt;- <span class="functioncall">rep</span>(<span class="functioncall">c</span>(1, 0), each = 20)
+a &lt;- <span class="functioncall">colMeans</span>(<span class="functioncall">subset</span>(panel, group == 0 &amp; Time &lt; 6, select = Outcome))
+b &lt;- <span class="functioncall">colMeans</span>(<span class="functioncall">subset</span>(panel, group == 0 &amp; Time &gt; 5, select = Outcome))
+c &lt;- <span class="functioncall">colMeans</span>(<span class="functioncall">subset</span>(panel, group == 1 &amp; Time &lt; 6, select = Outcome))
+d &lt;- <span class="functioncall">colMeans</span>(<span class="functioncall">subset</span>(panel, group == 1 &amp; Time &gt; 5, select = Outcome))
+DID &lt;- (d - c) - (b - a)
+
+<span class="comment"># Fit a regression at t = 5, show coefficients.</span>
+cs.regression1 &lt;- <span class="functioncall">lm</span>(Outcome ~ <span class="functioncall">factor</span>(Policy), <span class="functioncall">subset</span>(panel, Time = 6))
+<span class="functioncall">summary</span>(cs.regression1)$coefficients
+</pre></div><div class="output"><pre class="knitr R">                  Estimate Std. Error t value  Pr(>|t|)
+  (Intercept)        5.736     0.5172   11.09 1.782e-13
+  factor(Policy)1   10.464     1.0344   10.12 2.472e-12
+</pre></div></div></div>
+
+<p>The naive OLS method yields \(\hat{\beta}_{1} = \)<code class="knitr inline">10.4645</code>, much higher than the actual causal effect! Bias is introduced into the model by some unobserved, or unobservable, difference between the countries in our sample (Fig. 3.2). For example, countries with poorer economic performance often lack the resources to implement effective policy changes (i.e., the selection effect). This country-specific effect is absorbed by the unique error term \(u_{i6}\), causing it to be correlated with the regressor \(Cor(x_{i6}, u_{i6}) \ne 0\), violating the central regression of assumption of exogeneity.</p>
+
+<p>The difference between countries is our data set can be highlighted graphically, due the simplicity our hypothetical dataset and the
+fact that the data is both cross-sectional and time-series. Fitting a line to the Outcome by country highlights the country-specific differences that
+can be captured using panel data:
+</p>
+<div class="chunk"><div class="rcode"><div class="codetoggle"><a href="">[+/- Code]</a></div><div class="source"><pre class="knitr R"><span class="comment"># Scatter plot panel data grouped by ID, fit individual regression lines.</span>
+<span class="functioncall">library</span>(ggplot2)
+<span class="functioncall">ggplot</span>(panel, <span class="functioncall">aes</span>(x=Time, y=Outcome, color=Country)) + <span class="functioncall">geom_point</span>(shape = 1) +
+  <span class="functioncall">scale_colour_hue</span>(l=50) + <span class="functioncall">geom_smooth</span>(method=lm,se=<span class="keyword">FALSE</span>) +
+  <span class="functioncall">opts</span>(title = <span class="string">"Fig. 3.2: Regression Lines Fit by Country"</span>,
+       plot.title = <span class="functioncall">theme_text</span>(size=<span class="string">"14"</span>))
+</pre></div></div><div class="rimage default"><img src="figure/3-1scatter.png"  class="plot" /></div></div>
+
+
+<p>It should be noted that simply using panel data does not eliminate edogeneity issues, but rather enables the use of methods with account for it. For example, using pooled OLS to estimate the above regression equation ignores the time and subject data, and finds \(\hat{\beta}_{1}\) = <code class="knitr inline">10.4645</code>.</p>
+
+<h4>Resolving endogeneity</h4>
+
+<p>Individual unobserved heterogeneity can be controlled by modeling panel data with one of three regression modelings techniques: fixed-effects, least-squares dummy variables, and random-effects. These methods are all constructed from an error-components model, in which the unique error term \(u_{it}\) is split into the individual error \(v_{i}\) and the idiosyncratic error \(\epsilon_{it}\):</p>
+
+$$ u_{it} = v_{i} + \epsilon_{it} \tag{3.4}$$
+
+<p>Which gives us the following regression model, with the constant ommitted because it colinear with individual error term:</p>
+
+$$
+y_{it} = \beta_{1}x_{it} + v_{i} + \epsilon_{it} \tag{3.5}
+$$
+
+<p>Notice that individual error \(v_{i}\) does not vary over time. It captures time-independent differences between the individuals, which leads to the term fixed effects. The idiosyncratic error \(\epsilon_{it}\) varies across both time and individuals, and therefore should be uncorrelated with \(x_{it}\), allowing for OLS regression. All that remains for the regression modeling methods is how to handle the individual error term. </p>
+
+<h5>Fixed Effects</h5>
+
+<p>The strategy of the fixed effects (FE) model is to remove the time-constant effects and focus on the time-varying covariates. First we isolate the time-constant effects by averaging the error-components model over time for each individual \(i\).</p>
+
+$$
+\bar{y}_{i} = \beta_{1}\bar{x}_{i} + v_{i} + \bar{\epsilon}_{i} \tag{3.6}
+$$
+
+<p>This equation is then subtracted from the error-components model, removing the time-constant error:</p>
+
+$$
+y_{it} - \bar{y}_{i} = \beta_{1}(x_{it} - \bar{x}_{i}) + \epsilon_{it} - \bar{\epsilon}_{i} \tag{3.7}
+$$
+<p>Eliminating \(v_{i}\) resolves the time-constant individual heterogeneity and allows us to drop the assumption that \(v_{i}\) is uncorrelated with \(x_{it}\). This transformation focuses the FE model on the differences within individuals across time, and as such the model is also referred to as the "within model". As a result, this model does not allow us to estimate time-invariant effects on our dependent variables (e.g., geography). This process This model can be estimated in R using the plm package (cite).</p>
+<div class="chunk"><div class="rcode"><div class="codetoggle"><a href="">[+/- Code]</a></div><div class="source"><pre class="knitr R"><span class="functioncall">library</span>(<span class="string">"plm"</span>)
+<span class="comment"># Estimate a fixed-effects model <span class="keyword">for</span> X ~ Treatment.</span>
+fixed.effects &lt;- <span class="functioncall">plm</span>(Outcome ~ <span class="functioncall">factor</span>(Policy), data = panel, index = <span class="functioncall">c</span>(<span class="string">"Country"</span>, 
+    <span class="string">"Time"</span>), model = <span class="string">"within"</span>)
+<span class="functioncall">summary</span>(fixed.effects)$coefficients
+</pre></div><div class="output"><pre class="knitr R">                  Estimate Std. Error t-value  Pr(>|t|)
+  factor(Policy)1    6.711     0.7049    9.52 3.024e-11
+</pre></div></div></div>
+
+<p>The FE model estimtes \(\hat{\beta}_{1}\) = <code class="knitr inline">0.7049</code>, much closer to the actual effect than a cross-sectional or pooled OLS. 
+</p>
+<h5>Least-Squares Dummy Variable</h5>
+<p>
+Time-invariant effects can be estimated using the least squares dummy variable technique (LSDV) by including a dummy variable for each individual \(i\) into Equation 3.1. In the following equation, \(c_{2} ... c_{n}\) are binary dummies representing individuals and the coefficients \(E_{2} ... E_{n}\) represent their corresponding effect on the outcome variable:
+</p>
+$$
+y_{it} = \beta_{1}x_{1,it} + \beta_{2}x_{2,it} ... + \beta_{k}x_{k,it} + c_{2}E_{2} ... + c_{n}E_{n} + u_{it} \tag{3.8}
+$$
+<div class="chunk"><div class="rcode"><div class="codetoggle"><a href="">[+/- Code]</a></div><div class="source"><pre class="knitr R"><span class="comment"># Estimate an LSDV model <span class="keyword">for</span> X ~ Treatment.</span>
+lsdv &lt;- <span class="functioncall">lm</span>(Outcome ~ <span class="functioncall">factor</span>(Policy) + <span class="functioncall">factor</span>(Country), data = panel)
+<span class="functioncall">summary</span>(lsdv)$coefficients
+</pre></div><div class="output"><pre class="knitr R">                   Estimate Std. Error t value  Pr(>|t|)
+  (Intercept)        9.0564     0.6105  14.835 1.152e-16
+  factor(Policy)1    6.7106     0.7049   9.520 3.024e-11
+  factor(Country)B   0.8667     0.7049   1.229 2.271e-01
+  factor(Country)C  -5.5751     0.7881  -7.074 3.067e-08
+  factor(Country)D  -4.8200     0.7881  -6.116 5.435e-07
+</pre></div></div></div>
+
+<p>
+LSDV yields the same estimate for \(\hat{\beta}_{1}\), but has the advantage of yielding estimates for both time-invariant country-specific effects as well. However, LSDV is not practical for large \(n\), as it requires too many degrees of freedom. 
+</p>
+<h5>Random Effects</h5>
+Alternatively, endogeneity can be solved by assuming \(v_{i}\) are random variables and not fixed across cases or time, and thus not correlated with the error term: \(Cor(x_{it}, u_{i}) = 0\). The RE model can be esimated using pooled-OLS after applying the following transformation (Greene 2002):
+</p>
+\begin{gather}
+(y_{it} - \theta\bar{y}_{i}) = \beta_{0}(1 - \theta) + \beta_{1}(x_{it} - \theta\bar{x}_{i}) + (1 - \theta)v_{i} + (\epsilon_{it} - \theta\bar{\epsilon}_{i}),\cr
+\cr
+\theta = 1 - \sqrt{\sigma^2_\epsilon \above 1pt T\sigma^2_v + \sigma^2_\epsilon} \tag{3.9}
+\end{gather}
+<p>
+The RE estimator is identical to FE estimator at \(\theta = 1\), and the pooled-OLS estimator at \(\theta = 0\). Unlike the FE method, The RE method estimates time-constant covariates. However, If the data violate the modeling assumption of \(Cor(x_{it}, v_i) = 0\), the RE estimator can be highly biased, as it is with our example data set:
+</p>
+<div class="chunk"><div class="rcode"><div class="codetoggle"><a href="">[+/- Code]</a></div><div class="source"><pre class="knitr R"><span class="comment"># Estimate an RE model <span class="keyword">for</span> X ~ Treatment.</span>
+random.effects &lt;- <span class="functioncall">plm</span>(Outcome ~ <span class="functioncall">factor</span>(Policy), data = panel, index = <span class="functioncall">c</span>(<span class="string">"Country"</span>, 
+    <span class="string">"Time"</span>), model = <span class="string">"random"</span>)
+<span class="functioncall">summary</span>(random.effects)$coefficients
+</pre></div><div class="output"><pre class="knitr R">                  Estimate Std. Error t-value  Pr(>|t|)
+  (Intercept)        5.905     0.5435  10.864 3.244e-13
+  factor(Policy)1    9.788     1.0072   9.718 7.507e-12
+</pre></div></div></div>
+
+<br />
+<h5>Fixed or Random?</h5>
+<p>It is possible to determine the comparitive consistency of two alternative estimators for a given regression model using the Hausman test (Hausman 1978) with the null hypothesis that the FE estimator is preferable and the alternative hypothesis that the RE model is preferable. 
+<div class="chunk"><div class="rcode"><div class="codetoggle"><a href="">[+/- Code]</a></div><div class="source"><pre class="knitr R"><span class="functioncall">phtest</span>(fixed.effects, random.effects)
+</pre></div><div class="output"><pre class="knitr R">  
+  	Hausman Test
+  
+  data:  Outcome ~ factor(Policy) 
+  chisq = 18.3, df = 1, p-value = 1.885e-05
+  alternative hypothesis: one model is inconsistent 
+  
+</pre></div></div></div>
+
+<p>The Hausman test confirms what we knew about our example data: individual characteristics matter. Performing this test again may be unnecessary as we can safely determine which model is more appropriate given a sufficient understanding of the data and the nature of the question being asked. We can conclude the FE model is more appropriate For the majoriy of social science research questions, including economics, because there are individual or country-specific time-invariant=f effects on the outcome variable. The trouble is researchers are often interested in determining the nature of those effects, and thus are drawn to the detailed reporting of the RE model. However, the RE estimator may be highly biased because our unobserved variables are correlated with the error terms.</p>
+{% endblock %}

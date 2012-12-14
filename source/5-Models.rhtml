@@ -1,0 +1,171 @@
+<!--begin.rcode echo=FALSE
+
+## Apparently chunk hooks can be set before calling knit(), but it hasn't been working for me.
+## So this has be included at the top of any Rhtml file with "hide/show code" enabled.
+
+## Set this hook and source code chunks have a "Hide/Show Code" code button if front of them.
+## Default hidden/visible option should be set globally in a CSS stylesheet.
+
+knit_hooks$set(toggle = function(before, options, envir) {
+  if (before) {
+    ## before a chunk has been evaluated.
+    return("<div class=\"codetoggle\"><a href=\"\">[+/- Code]</a></div>")
+    }
+  })
+
+end.rcode-->
+
+{% extends "base.html" %}{% block content %}
+
+<h3>Model Specifications</h3>
+<p>
+We fit two seperate models for economic growth in terms of institutions, the first
+measuring level-on-levels and the second measures change-on-changes. The first 
+model attempts to exaplin annual growth of GDP per capita in terms of annual
+measures of institutional inclusiveness. The second model exaplins change in annual growth 
+of GDP per capita in terms of the annual change of our institutional inclusiveness measure.
+</p>
+<p>
+The data is collected from multiple sources in a fragmented format, and
+should be stored together in one table. R's merge command allows us
+to combine variables into data.frame object by indexes. Most of our
+data is already index by ISO alpha-3 country code and observation year.
+Some of the data sources use alternative country code standards (e.g.,
+the Correlates of War standard). The countrycode library provides a
+simple command for harmonizing country codes.The plyr
+package offers a tidy and straightforward
+approach for operating on a group within a dataset (Wickam 2011).
+</p>
+<!--begin.rcode format-data, comment = " ", tidy = FALSE, warning = FALSE, message = FALSE, toggle = TRUE
+
+# Function to find finite first differences along a vector
+first.diff <- function(x) { 
+	d.x <- array(data = NA, dim = length(x))
+  	for (i in 2:length(x)) {
+    	d.x[i] <- x[i] - x[i - 1]
+    	}
+  	return(d.x)
+  	}
+
+# Function to find growth rate along a vector
+gr <- function(x) { # growth rate, accepts level data
+  	gr.x <- array(data = NA, dim = length(x))
+  	for (i in 2:length(x)) {
+    	gr.x[i] <- (x[i] - x[i -1])/x[i]
+    	}
+  	return(gr.x)
+  	}
+
+# Load data sets
+penn <- read.csv("../../data/penn_data.csv", header = T, quote = "\"", na.strings = "na")
+p4 <- read.csv("../../data/p4v2010.csv", header = T)
+
+# Match country codes
+library(countrycode)
+p4$Country.Code <- countrycode(p4$Country.Code,"cowc", "iso3c")
+Panel <- merge(p4, penn, by = c("Country.Code", "Year"))
+
+# Load plyr for data.frame manipulation
+library(plyr)
+
+# Caculate growth rate and difference variables.
+Panel <- ddply(Panel, .(Country.Code),
+               function(dd) within(dd, d.POLITY2 <- first.diff(POLITY2)))
+
+Panel <- ddply(Panel, .(Country.Code),
+               function(dd) within(dd, d.Openk <- first.diff(Openk)))
+
+Panel <- ddply(Panel, .(Country.Code),
+               function(dd) within(dd, gr.GDP.pc <- gr(GDP.pc)))
+
+Panel <- ddply(Panel, .(Country.Code),
+               function(dd) within(dd, d.gr.GDP.pc <- first.diff(gr.GDP.pc)))
+end.rcode-->
+<br />
+<h4>5.1 Level-on-levels</h4>
+<p>
+This model explains annual GDP per capita growth rates in terms of annual measures of 
+institutional inclusiveness (POLITY2) and trade openness (OpenK). We first use the FE
+estimator to estimate the following equation:
+</p>
+$$
+Y_{it} = \beta_{1}X[1]_{it} + ... + \beta_{k}X[k]_{it} + \alpha_{i} + u_{it} \tag{5.1}
+$$
+
+Where:
+<ul>
+<li>\(Y_{it}\) is annual growth of GDP per capita, where \(i\) = country and \(t\) = year,
+<li>\(X[k]\) representes our independent variables (1 through \(k\)),
+<li>\(\beta_{k}\) is the coefficient for those independent variable,
+<li>\(\alpha_{i}\) is the unknown intercept for a country,
+<li>and \(u_{it}\) is the error term.
+</ul>
+</p>
+<h5>Model 1 Results: Level-on-levels FE estimator</h5>
+<!--begin.rcode levels-fe, comment = " ", warning = FALSE, message = FALSE, toggle = TRUE
+library(plm)
+
+levels.fe <- plm(gr.GDP.pc ~ POLITY2 + Openk, data=Panel, index=c("Country.Code", "Year"), model="within")
+
+summary(levels.fe)
+end.rcode-->
+<br />
+<p>
+
+Using the FE estimator, neither independent variable has a statisticaly significant effect on GDP per capita growth rates. Now we turn to the RE estimator for the same equation and data:
+</p>
+<h5>Model 2 Results: Level-on-levels RE estimator</h5>
+<!--begin.rcode levels-re, comment = " ", warning = FALSE, message = FALSE, toggle = TRUE
+
+levels.re <- plm(gr.GDP.pc ~ POLITY2 + Openk, data=Panel, index=c("Country.Code", "Year"), model="random")
+
+summary(levels.re)
+end.rcode-->
+<br />
+<p>The RE estimator yields a model with greater statistical signficance and estimates a positive and significant relationship
+between our measure of institutional inclusivess and annual GDP per capita growth rates.
+</p>
+<h4>5.2 Change-on-changes</h4>
+
+<p>
+This model instead uses the annual finite difference
+of the independent variables and the GDP growth rate. (The
+Savistky-Golay method discussed in section 2.1 produces unusable results
+because of missing data points and cannot be used.) This model attempts to
+estimates an equation explaining change in annual GDP per capita growth rates 
+in terms of change in political inclusivness (POLITY2) and trade openness (Openk), in the form:
+</p>
+
+$$
+y_{it} = \beta_{1}X[1]_{it} + ... + \beta_{k}X[k]_{it} + \alpha_{i} + u_{it} \tag{5.2}
+$$
+
+<ul>
+<li>\(t_{it}\) is the annual change in GDP per capita growth rates, where \(i\) = country and \(t\) = year,
+<li>\(X[k]\) representes some independent variables (1 through *k*),
+<li>\(\beta_{k}\) is the coefficient for those independent variable,
+<li>\(\alpha_{i}\) is the unknown intercept for a country,
+<li>and \(u_{it}\) is the error term.
+</ul>
+
+<p>
+Only the FE results are reported as the RE estimator cannot be used to fit equation 5.2 because the resulting estimated variance of the 
+country-specific effect is negative. The results of the FE estimation method for the above equation are as follows:
+</p>
+<h5>Model 3 Results: Change-on-changes FE estimator</h5>
+
+<!--begin.rcode changes-fe, comment = " ", warning = FALSE, message = FALSE, toggle = TRUE
+
+changes.fe <- plm(d.gr.GDP.pc ~ d.POLITY2 + d.Openk, data=Panel, index=c("Country.Code", "Year"), model="within")
+
+summary(changes.fe)
+end.rcode-->
+<br />
+
+The overall model fit is higher than both level-on-levels model, but the POLITY2 no longer has a significant effect on 
+our outcome variable.
+
+
+
+
+{% endblock %}

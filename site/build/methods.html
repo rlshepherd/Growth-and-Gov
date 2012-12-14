@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<!--[if lt IE 7 ]><html class="ie ie6" lang="en"> <![endif]-->
+<!--[if IE 7 ]><html class="ie ie7" lang="en"> <![endif]-->
+<!--[if IE 8 ]><html class="ie ie8" lang="en"> <![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!--><html lang="en"> <!--<![endif]-->
+<head>
+
+	<!-- Basic Page Needs
+    ================================================== -->
+	<meta charset="utf-8">
+	<title>Governance and Growth</title>
+	<meta name="description" content="">
+	<meta name="author" content="Russell Shepherd">
+
+	<!-- Mobile Specific Metas
+    ================================================== -->
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<!-- CSS
+    ================================================== -->
+  	<!-- Skeleton Requires -->
+	<link rel="stylesheet" href="../static/css/base.css">
+	<link rel="stylesheet" href="../static/css/skeleton.css">
+	<link rel="stylesheet" href="../static/css/layout.css">
+
+	<!-- My overrides -->
+	<link rel="stylesheet" type="text/css" href="../static/css/econproject.css">
+	<link rel="stylesheet" href="../static/css/chunks.css">
+
+	<!--[if lt IE 9]>
+		<script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+	
+	<!-- Javascript Includes 
+    ================================================== -->
+
+	<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+	<script type="text/javascript" src="../static/js/jQuery.js"></script>
+
+
+
+</head>
+<body>
+
+
+
+	<!-- Primary Page Layout
+	================================================== -->
+
+	<div class="container">
+		<div class="sixteen columns">
+			<h1 class="remove-bottom" style="margin-top: 40px">Governance and Growth</h1>
+			<h5><i>An Econometric Analysis</i></h5>
+			<hr />
+		</div>
+		<div class="four columns" id="mainmenu">
+			<h4>Contents</h4>
+			<ol>
+				<li><a href="index.html">Introduction</a></li>
+				<li><a href="literature.html">Related Literature</a>
+				<li><a href="3-Methods.html">Methods</a></li>
+				<li><a href="4-Data.html">Data</a></li>
+				<li><a href="5-Models.html">Model Specifications</a></li>
+				<li><a href="interpretation.html">Interpretation &amp; Conclusions</a></li>
+				<li><a href="biblio.html">References</a></li>
+			</ol>
+		</div>
+		<div class="twelve columns">
+
+		<!-- Django Content Block 
+		================================================== -->
+			
+			
+<div class="chunk"><div class="rcode"><div class="source"><pre class="knitr R">opts_chunk$<span class="functioncall">set</span>(fig.width = 5, fig.height = 5, fig.path = <span class="string">"ex-out-"</span>)
+</pre></div></div></div>
+
+
+<h4>Methods</h4>
+
+<p>The main benefit of panel data is it allows us to control for unobserved heterogeneity. To clarify, consider an example based on membership in a regional trade agreement. Those countries allowed to participate in the regional trade agreement are selected based on a number of factors contributing positively to economic growth, so while members may have higher growth rates, this is not caused by membership. Here I create a fictuous sample of 4 countries with observations of GDP, two of which became members and two did not, with repeated observations for annual GDP:</p>
+
+<div class="chunk"><div class="rcode"><div class="source"><pre class="knitr R">id &lt;- <span class="functioncall">c</span>(<span class="functioncall">rep</span>(1, 6), <span class="functioncall">rep</span>(2, 6), <span class="functioncall">rep</span>(3, 6), <span class="functioncall">rep</span>(4, 6))
+time &lt;- <span class="functioncall">rep</span>(1:6, 4)
+GDP.growth &lt;- <span class="functioncall">c</span>(1.2, 1.3, 1.4, 1.5, 1.4, 1.5, 1.6, 1.5, 1.5, 1.4, 1.7, 1.7, 
+    2.8, 2.7, 2.6, 3.1, 3.2, 3.4, 1.8, 1.9, 2, 2.1, 2.2, 2.3)
+member &lt;- <span class="functioncall">c</span>(<span class="functioncall">rep</span>(<span class="functioncall">rep</span>(0, 6), 2), <span class="functioncall">rep</span>(<span class="functioncall">c</span>(<span class="functioncall">rep</span>(0, 3), <span class="functioncall">rep</span>(1, 3)), 2))
+panel &lt;- <span class="functioncall">data.frame</span>(id, time, GDP.growth, member)
+
+panel
+</pre></div><div class="output"><pre class="knitr R">##    id time GDP.growth member
+## 1   1    1        1.2      0
+## 2   1    2        1.3      0
+## 3   1    3        1.4      0
+## 4   1    4        1.5      0
+## 5   1    5        1.4      0
+## 6   1    6        1.5      0
+## 7   2    1        1.6      0
+## 8   2    2        1.5      0
+## 9   2    3        1.5      0
+## 10  2    4        1.4      0
+## 11  2    5        1.7      0
+## 12  2    6        1.7      0
+## 13  3    1        2.8      0
+## 14  3    2        2.7      0
+## 15  3    3        2.6      0
+## 16  3    4        3.1      1
+## 17  3    5        3.2      1
+## 18  3    6        3.4      1
+## 19  4    1        1.8      0
+## 20  4    2        1.9      0
+## 21  4    3        2.0      0
+## 22  4    4        2.1      1
+## 23  4    5        2.2      1
+## 24  4    6        2.3      1
+</pre></div></div></div>
+
+
+Here we have observed four countries (N = 4), for six years (t = 6), each with GDP growth varying between 1.2 and 3.4.Note the two kinds of variation, between countries and within individual countries across time. We can plot the data as follows:
+
+<div class="chunk"><div class="rcode"><div class="source"><pre class="knitr R"><span class="functioncall">library</span>(car)
+<span class="functioncall">scatterplot</span>(GDP.growth ~ time, data = panel, groups = id, smooth = F, reg.line = F, 
+    legend.plot = F)
+</pre></div></div><div class="rimage default"><img src="ex-out-scatter.png"  class="plot" /></div></div>
+
+
+We can estimate the effect of membership using a cross-sectional regression for t = 4, specificied as: 
+
+$$ y_{i4} = \beta_{0} + \beta_{1}x_{i4} + u_{i4} $$
+
+Where:
+* i = (1 ... N) for N countries,
+* $u_{i4}$ is the error term,
+* $\x_{i4}$ is our independent variable
+* $\beta_{1}$ is the coefficient for that variables,
+* $\beta_{0}$ is the intercept,
+* and $y_{i4}$ is the dependent variable.
+
+We can estimate this model using ordinary least squares in R:
+
+<div class="chunk"><div class="rcode"><div class="source"><pre class="knitr R">cs.regression1 &lt;- <span class="functioncall">lm</span>(GDP.growth ~ member, <span class="functioncall">subset</span>(panel, time = 4))
+
+<span class="functioncall">summary</span>(cs.regression1)
+</pre></div><div class="output"><pre class="knitr R">## 
+## Call:
+## lm(formula = GDP.growth ~ member, data = subset(panel, time = 4))
+## 
+## Residuals:
+##    Min     1Q Median     3Q    Max 
+## -0.617 -0.350 -0.200  0.283  1.050 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(>|t|)    
+## (Intercept)    1.750      0.119   14.67  7.7e-13 ***
+## member         0.967      0.239    4.05  0.00053 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
+## 
+## Residual standard error: 0.506 on 22 degrees of freedom
+## Multiple R-squared: 0.427,	Adjusted R-squared: 0.401 
+## F-statistic: 16.4 on 1 and 22 DF,  p-value: 0.000531 
+## 
+</pre></div></div></div>
+
+
+
+The effect of membership on GDP is estimated as $\hat{\beta}_{1} = 0.9667$! This estimate is highly biases because of unobserved individual heterogeneity, or ommitted variable bias. The unobserved determinants of growth are in the error term, and cause $u_{i4}$ and $X_{i4}$ to be correlated. This violates the central regression assumption of exogeneity, that our independent variables and error term are uncorrelated. Cross-country regressions are often plagued by such endogeneity issues. 
+
+#### Resolving endogeneity with panel data
+
+There are several methods for resolving endogeneity, and estimating the true effect of a regressor, using panel data. Each of these methods is based on distinguishing the error within and imbetween the individuals, and so each starts with an *error components model*:
+
+$$u_{it} = v_{i} + \epsilon_{it}$$
+
+
+		
+		</div> <!-- django content block -->
+
+		<!-- Footer 
+		================================================== -->
+		<div id="footer">
+			<div class="sixteen columns">
+				<hr />
+			</div>
+			<div class="one-third column">
+				<h5>About the Author</h5>
+				<p>Russell Shepherd is a M.A. International Policy Studies candidate at the Monterey Institute of International Studies. See more or find contact information at <a href="http://www.russellshepherd.com/">Dados Formosa</a>.</p>
+			</div>
+			<div class="one-third column">
+				<h5>The Project</h5>
+				<p>The Governance and Growth project is reproducible, details and source code available at <a href="https://github.com/rlshepherd/Growth-and-Gov">Github</a>. </p>
+
+			</div>
+			<div class="one-third column">
+				<h5>Usage</h5>
+				All other content, except where noted, is licsened under the <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Creative Commons BY-NC-SA 3.0 License</a>.</p>
+			</div>
+		</div><!-- footer -->	
+		
+
+	</div><!-- container -->
+
+
+<!-- End Document
+================================================== -->
+
+<!-- JQuery functions -->
+<script type="text/javascript">
+$("span.functioncall").replaceWith(function(){return '<a target="_blank" href="http://rgm2.lab.nig.ac.jp/RGM2/search.php?query='+$(this).text()+'">'+$(this).text()+'</a>'})
+</script>
+
+<script type="text/javascript">
+	$('.codetoggle').click(function(e) {
+	e.preventDefault();
+	$(this).parent().children('.source').slideToggle("fast");
+	})
+	var originalText;
+	$('.example-grid').children().hover(
+	function() {
+	originalText = $(this).text();
+	$(this).html($(this).width()+'px');
+	},
+	function() {
+	$(this).html(originalText);
+	}) 
+</script> <!-- jQuery -->
+
+</body>
+</html>
