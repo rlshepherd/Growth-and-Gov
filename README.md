@@ -2,14 +2,14 @@
 
 This project is an example of generating [reproducible research](http://yihui.name/en/2012/06/enjoyable-reproducible-research/) for the web using [R](http://www.r-project.com). 
 
-##
+## Starting a new project
 
 These instructions are based on [Barry Rowlingson's workflow for publishing course notes](http://geospaced.blogspot.tw/2012/05/knitr-cactus-twitterbootstrap-jquery.html). The process involves two steps:
 
 1. Use knitr to turn annotated R code into webpages.
 2. Use cactus.py to build a website by stitching those pages together with a template.
 
-#### Starting a new project
+#### Annotated R scripts
 
 Create a project directory with the following sub-directories. Using this directory tree saves you the time of correcting broken image links to graphs ouput from R later on.
 
