@@ -30,7 +30,6 @@ x <- sample(1:20,10)
 end.rcode-->
 
 {% endblock %}
-
 ```
 
 If you want to include a show/hide code function, you can tell knitr to add a CSS layer which acts as show/hide toggle button by setting the following knitr chunk hook before the Django hook at the top of each .Rhtml file. (*This is a workaround, you should be able to set the chunk hook once before calling* `knit()`).
@@ -76,7 +75,6 @@ If you set the knitr chunk hook to add a show/hide code button above all code ch
 	$(this).html(originalText);
 	}) 
 </script> <!-- show/hide code-->
-
 ```
 
 #### Publishing and Updating
@@ -113,5 +111,4 @@ for (x in 1:length(rhtml.files)) {
 
 # System call tells cactus to rebuild the site
 system(paste0("cactus.py ", pd, " build", collapse = NULL))
-
 ```
