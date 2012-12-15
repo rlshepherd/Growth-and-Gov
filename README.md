@@ -32,12 +32,52 @@ end.rcode-->
 {% endblock %}
 
 ```
+
+If you want to include a show/hide code function, you can tell knitr to add a CSS layer which acts as show/hide toggle button by setting the following knitr chunk hook before the Django hook at the top of each .Rhtml file. (*This is a workaround, you should be able to set the chunk hook once before calling* `knit()`).
+
+```r
+<!--begin.rcode echo=FALSE
+
+knit_hooks$set(toggle = function(before, options, envir) {
+  if (before) {
+    ## before a chunk has been evaluated.
+    return("<div class=\"codetoggle\"><a href=\"\">[+/- Code]</a></div>")
+    }
+  })
+
+end.rcode-->
+```
+
 #### Static Website Generator
 
 Set up [cactus.py](https://github.com/koenbok/Cactus), follow the tutorial to create a new project in `projectdirectory/site/`. 
 
 Get and customize an HTML template like Skeleton to use as the base.html template. Grab the CSS file used by knitr as a starting point to make the code chunks look nicer. If you want a show/hide code chunks function, remember to add necessary CSS styles.
 
+If you set the knitr chunk hook to add a show/hide code button above all code chunks, add some JavsScript to `site/templates/base.html` to handle showing/hiding the code layers. For example (using jQuery):
+
+```html
+<!-- JavaScript Includes -->
+<script type="text/javascript" src="../static/js/jQuery.js"></script>
+
+<!-- show/hide code script -->
+<script type="text/javascript">
+	$('.codetoggle').click(function(e) {
+	e.preventDefault();
+	$(this).parent().children('.source').slideToggle("fast");
+	})
+	var originalText;
+	$('.example-grid').children().hover(
+	function() {
+	originalText = $(this).text();
+	$(this).html($(this).width()+'px');
+	},
+	function() {
+	$(this).html(originalText);
+	}) 
+</script> <!-- show/hide code-->
+
+```
 
 #### Publishing and Updating
 
