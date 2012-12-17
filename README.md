@@ -1,6 +1,6 @@
 ## Governance and Growth
 
-This project is an example of generating [reproducible research](http://yihui.name/en/2012/06/enjoyable-reproducible-research/) for the web using [R](http://www.r-project.org). 
+This project is an example of generating [reproducible research](http://yihui.name/en/2012/06/enjoyable-reproducible-research/) for the web using [R](http://www.r-project.org). You can [view the site here](http://russellshepherd.com/gov-and-growth/site/build/). 
 
 ## Starting a new project
 
