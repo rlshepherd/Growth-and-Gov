@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<urlset xmlns="http://www.google.com/schemas/sitemap/0.84"> 
+
+	<url>
+		<loc>2-Related-Literature.html</loc>
+		<changefreq>daily</changefreq> 
+		<priority>1.0</priority> 
+	</url>
+
+	<url>
+		<loc>3-Methods.html</loc>
+		<changefreq>daily</changefreq> 
+		<priority>1.0</priority> 
+	</url>
+
+	<url>
+		<loc>4-Data.html</loc>
+		<changefreq>daily</changefreq> 
+		<priority>1.0</priority> 
+	</url>
+
+	<url>
+		<loc>5-Models.html</loc>
+		<changefreq>daily</changefreq> 
+		<priority>1.0</priority> 
+	</url>
+
+	<url>
+		<loc>biblio.html</loc>
+		<changefreq>daily</changefreq> 
+		<priority>1.0</priority> 
+	</url>
+
+	<url>
+		<loc>data.html</loc>
+		<changefreq>daily</changefreq> 
+		<priority>1.0</priority> 
+	</url>
+
+	<url>
+		<loc>/</loc>
+		<changefreq>daily</changefreq> 
+		<priority>1.0</priority> 
+	</url>
+
+	<url>
+		<loc>interpretation.html</loc>
+		<changefreq>daily</changefreq> 
+		<priority>1.0</priority> 
+	</url>
+
+	<url>
+		<loc>literature.html</loc>
+		<changefreq>daily</changefreq> 
+		<priority>1.0</priority> 
+	</url>
+
+	<url>
+		<loc>methods.html</loc>
+		<changefreq>daily</changefreq> 
+		<priority>1.0</priority> 
+	</url>
+
+</urlset>
